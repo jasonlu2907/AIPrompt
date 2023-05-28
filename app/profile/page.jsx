@@ -7,21 +7,45 @@ import { useRouter } from 'next/navigation';
 import Profile from '@components/Profile';
 
 const MyProfile = () => {
+  const { data: session } = useSession();
+  const [posts, setPosts] = useState([]);
+  const router = useRouter();
+
   const fetchPosts = async () => {
-    const response = await fetch('/api/prompt');
+    const response = await fetch(`/api/users/${session?.user.id}/posts`);
     const data = await response.json();
 
-    setAllPosts(data);
+    setPosts(data);
   };
-  const handleEdit = async () => {};
 
-  const handleDelete = async () => {};
+  useEffect(() => {
+    if (session?.user.id) fetchPosts(); //only look for posts if the user exists
+  }, []);
+
+  const handleEdit = async (post) => {
+    router.push(`/update-prompt?id=${post._id}`);
+  };
+
+  const handleDelete = async (post) => {
+    const hasConfirmed = confirm('Are you sure you want to delete this?');
+
+    if (hasConfirmed) {
+      try {
+        await fetch(`/api/prompt?id=${post._id.toString()}`, {
+          method: 'DELETE',
+        });
+
+        const filteredPost = posts.filter((p) => p._id !== post._id);
+        setPosts(filteredPost);
+      } catch (error) {}
+    }
+  };
 
   return (
     <Profile
       name='My'
       desc='Welcome to your personalized profile'
-      data={[]}
+      data={posts}
       handleEdit={handleEdit}
       handleDelete={handleDelete}
     ></Profile>
